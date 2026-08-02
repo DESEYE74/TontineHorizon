@@ -13,8 +13,14 @@ async function loadImageAsDataURL(url) {
   });
 }
 
-// Construit le PDF du reçu et retourne { doc, blob, fileName }
-export async function buildReceiptPdf(receipt) {
+// `context` permet de passer les vraies valeurs de la tontine (nom, devise,
+// nombre de tours = nombre de membres). Sans contexte, on retombe sur les
+// valeurs de démonstration.
+export async function buildReceiptPdf(receipt, context = {}) {
+  const name = context.name ?? TONTINE.name;
+  const currency = context.currency ?? TONTINE.currency;
+  const totalTurns = context.totalTurns ?? TONTINE.totalTurns;
+
   const doc = new jsPDF({ unit: "mm", format: "a5" });
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -28,7 +34,7 @@ export async function buildReceiptPdf(receipt) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.setTextColor(22, 28, 51);
-  doc.text(TONTINE.name, pageWidth / 2, 42, { align: "center" });
+  doc.text(name, pageWidth / 2, 42, { align: "center" });
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -41,7 +47,7 @@ export async function buildReceiptPdf(receipt) {
   const rows = [
     ["Référence", receipt.id],
     ["Membre", receipt.member],
-    ["Tour", `${receipt.turn} / ${TONTINE.totalTurns}`],
+    ["Tour", `${receipt.turn} / ${totalTurns}`],
     ["Date de versement", receipt.date],
   ];
   let y = 64;
@@ -66,31 +72,32 @@ export async function buildReceiptPdf(receipt) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.setTextColor(27, 33, 48);
-  doc.text(`${receipt.amount.toLocaleString("fr-FR")} ${TONTINE.currency}`, pageWidth - 15, y, { align: "right" });
+  doc.text(`${receipt.amount.toLocaleString("fr-FR")} ${currency}`, pageWidth - 15, y, { align: "right" });
 
   const fileName = `${receipt.id}.pdf`;
   const blob = doc.output("blob");
   return { doc, blob, fileName };
 }
 
-export async function downloadReceiptPdf(receipt) {
-  const { doc, fileName } = await buildReceiptPdf(receipt);
+export async function downloadReceiptPdf(receipt, context) {
+  const { doc, fileName } = await buildReceiptPdf(receipt, context);
   doc.save(fileName);
 }
 
 // Partage natif (mobile : ouvre le menu de partage, WhatsApp inclus).
 // Sur ordinateur, si le partage de fichier n'est pas supporté, on télécharge à la place.
-export async function shareReceiptPdf(receipt) {
-  const { blob, fileName } = await buildReceiptPdf(receipt);
+export async function shareReceiptPdf(receipt, context) {
+  const { blob, fileName } = await buildReceiptPdf(receipt, context);
   const file = new File([blob], fileName, { type: "application/pdf" });
+  const name = context?.name ?? TONTINE.name;
 
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     await navigator.share({
       files: [file],
-      title: `Reçu ${receipt.member} — ${TONTINE.name}`,
-      text: `Reçu de versement, tour ${receipt.turn} — ${TONTINE.name}`,
+      title: `Reçu ${receipt.member} — ${name}`,
+      text: `Reçu de versement, tour ${receipt.turn} — ${name}`,
     });
   } else {
-    await downloadReceiptPdf(receipt);
+    await downloadReceiptPdf(receipt, context);
   }
 }
