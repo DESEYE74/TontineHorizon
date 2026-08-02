@@ -47,7 +47,7 @@ export default function ChatDrawer({ open, onClose, role }) {
   if (!open) return null;
   return (
     <div style={{
-      position: "fixed", bottom: 24, right: 24, width: 340, maxHeight: 480,
+      position: "fixed", bottom: 16, right: 16, left: 16, width: "auto", maxWidth: 340, marginLeft: "auto", maxHeight: "min(480px, 70vh)",
       background: "#fff", borderRadius: 16, border: `1px solid ${T.line}`,
       boxShadow: "0 16px 40px rgba(22,28,51,0.18)", display: "flex", flexDirection: "column",
       overflow: "hidden", zIndex: 50,

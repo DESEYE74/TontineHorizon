@@ -27,18 +27,18 @@ export default function Shell({ role, active, onNav, onLogout, onChat, children 
   const nav = role === "admin" ? adminNav : memberNav;
 
   return (
-    <div className="f-body" style={{ display: "flex", minHeight: "100vh", background: T.stone }}>
-      <div style={{ width: 220, background: T.ink, padding: "22px 16px", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 8px 22px" }}>
-          <img src={logoUrl} alt="" style={{ width: 32, height: 32, objectFit: "contain" }} />
-          <div>
-            <p className="f-display" style={{ color: "#fff", fontSize: 15, fontStyle: "italic", margin: 0 }}>{name}</p>
-            <p style={{ color: "#8B93B8", fontSize: 10.5, margin: 0 }}>
+    <div className="f-body app-shell" style={{ background: T.stone }}>
+      <div className="app-sidebar" style={{ background: T.ink, padding: "22px 16px", display: "flex", flexDirection: "column" }}>
+        <div className="app-sidebar-header" style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 8px 22px" }}>
+          <img src={logoUrl} alt="" style={{ width: 32, height: 32, objectFit: "contain", flexShrink: 0 }} />
+          <div style={{ minWidth: 0 }}>
+            <p className="f-display" style={{ color: "#fff", fontSize: 15, fontStyle: "italic", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</p>
+            <p style={{ color: "#8B93B8", fontSize: 10.5, margin: 0, whiteSpace: "nowrap" }}>
               {role === "admin" ? "Espace administrateur" : "Espace membre · lecture seule"}
             </p>
           </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <div className="app-nav-list">
           {nav.map((n) => (
             <button key={n.key} onClick={() => onNav(n.key)} style={{
               display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 9,
@@ -51,23 +51,23 @@ export default function Shell({ role, active, onNav, onLogout, onChat, children 
             </button>
           ))}
         </div>
-        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="app-sidebar-footer" style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
           <button onClick={onChat} style={{
-            display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 9,
+            display: "flex", alignItems: "center", gap: 8, padding: "9px 10px", borderRadius: 9,
             border: `1px solid ${T.inkLine}`, cursor: "pointer", background: "transparent",
             color: T.gold, fontSize: 13.5, fontWeight: 600,
           }}>
             <Sparkles size={15} /> Assistant
           </button>
           <button onClick={onLogout} style={{
-            display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 9,
+            display: "flex", alignItems: "center", gap: 8, padding: "9px 10px", borderRadius: 9,
             border: "none", cursor: "pointer", background: "transparent", color: "#8B93B8", fontSize: 13,
           }}>
             <LogOut size={15} /> Se déconnecter
           </button>
         </div>
       </div>
-      <div style={{ flex: 1, padding: "28px 32px", overflowY: "auto" }}>{children}</div>
+      <div className="app-main">{children}</div>
     </div>
   );
 }

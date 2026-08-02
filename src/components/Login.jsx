@@ -44,7 +44,7 @@ export default function Login({ onEnter }) {
 
   return (
     <div className="f-body" style={{ minHeight: "100vh", background: T.ink, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div style={{ width: 380 }}>
+      <div style={{ width: "100%", maxWidth: 380 }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <img src={logoUrl} alt={brand.name} style={{ width: 84, height: 84, objectFit: "contain", margin: "0 auto 12px" }} />
           <h1 className="f-display" style={{ color: "#fff", fontSize: 26, margin: 0, fontStyle: "italic", fontWeight: 500 }}>

@@ -118,18 +118,18 @@ export default function MembersView() {
     >
       {showForm && (
         <div style={{ background: "#fff", border: `1px solid ${T.line}`, borderRadius: 14, padding: 18, marginBottom: 20 }}>
-          <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-            <div style={{ flex: 2 }}>
+          <div style={{ display: "flex", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+            <div style={{ flex: 2, minWidth: 180 }}>
               <label style={{ fontSize: 12, color: T.textSoft }}>Nom complet</label>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="ex. Awa Koné" style={{ ...inputStyle, marginTop: 4 }} />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 140 }}>
               <label style={{ fontSize: 12, color: T.textSoft }}>Téléphone (optionnel)</label>
               <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+225 ..." style={{ ...inputStyle, marginTop: 4 }} />
             </div>
           </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 14 }}>
-            <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 14, flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 160 }}>
               <label style={{ fontSize: 12, color: T.textSoft }}>Code personnel (à communiquer au membre)</label>
               <input value={form.code} readOnly className="f-mono" style={{ ...inputStyle, marginTop: 4, letterSpacing: 3, fontWeight: 600 }} />
             </div>
@@ -184,20 +184,20 @@ export default function MembersView() {
                   </button>
                 </div>
               ) : (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: T.stone, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, color: T.text }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: T.stone, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, color: T.text, flexShrink: 0 }}>
                       {m.initials}
                     </div>
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <p style={{ fontSize: 13.5, fontWeight: 600, margin: 0, color: T.text }}>{m.name}</p>
-                      <p style={{ fontSize: 11.5, color: T.textSoft, margin: 0, display: "flex", alignItems: "center", gap: 4 }}>
+                      <p style={{ fontSize: 11.5, color: T.textSoft, margin: 0, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
                         Tour {m.turn_order} {m.phone && <><Phone size={10} /> {m.phone}</>}
                       </p>
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <span className="f-mono" style={{ fontSize: 12.5, color: T.textSoft }}>Code : {m.personal_code}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <span className="f-mono" style={{ fontSize: 12.5, color: T.textSoft, whiteSpace: "nowrap" }}>Code : {m.personal_code}</span>
                     <Pill status={rotationStatus(m.turn_order, currentTurn)} />
                     <button onClick={() => startEdit(m)} title="Modifier" style={{
                       background: "none", border: "none", cursor: "pointer", padding: 4, color: T.textSoft,
