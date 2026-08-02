@@ -41,19 +41,21 @@ export default function AdminDashboard() {
   return (
     <Screen
       title="Tableau de bord"
-      subtitle={`${tontine.frequency} · Cycle ${tontine.cycleNumber ?? 1} · Tour ${currentTurn} sur ${tontine.totalTurns ?? members.length}`}
+      subtitle={`${tontine.frequency} · Cycle ${tontine.cycleNumber ?? 1} · Tour ${currentTurn} sur ${members.length}`}
     >
-      <div style={{ display: "flex", gap: 14, marginBottom: 24 }}>
+      <div className="stat-row">
         <StatCard label="Collecté ce tour" value={`${totalCollected.toLocaleString("fr-FR")} F`} sub={`${paidCount} / ${members.length} membres`} icon={Wallet} />
         <StatCard label="En retard" value={lateCount} sub="N'ont pas encore versé ce tour" icon={AlertTriangle} />
         <StatCard label="Bénéficiaire du tour" value={beneficiary?.name ?? "—"} sub={`Reçoit ${(tontine.amount * members.length).toLocaleString("fr-FR")} F`} icon={ShieldCheck} />
       </div>
 
-      <div style={{ display: "flex", gap: 20 }}>
-        <div style={{ background: T.ink, borderRadius: 16, padding: "28px 20px", flex: "0 0 380px" }}>
-          <RotationWheel members={members} currentTurn={currentTurn} amount={tontine.amount} currency={tontine.currency} />
+      <div className="two-col">
+        <div className="wheel-col" style={{ background: T.ink, borderRadius: 16, padding: "28px 20px" }}>
+          <div className="rotation-wheel-wrap">
+            <RotationWheel members={members} currentTurn={currentTurn} amount={tontine.amount} currency={tontine.currency} />
+          </div>
         </div>
-        <div style={{ flex: 1, background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "18px 20px" }}>
+        <div className="list-col" style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "18px 20px" }}>
           <h3 className="f-body" style={{ fontSize: 14, fontWeight: 700, margin: "0 0 4px" }}>Ordre des tours</h3>
           <p style={{ fontSize: 12, color: T.textSoft, margin: "0 0 14px" }}>
             Qui a déjà reçu la caisse, qui la reçoit ce tour-ci, qui attend encore son tour.

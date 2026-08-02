@@ -31,12 +31,12 @@ export default function CalendarView({ role }) {
   if (!tontine) return null;
 
   const currentTurn = tontine.currentTurn ?? 1;
-  const totalTurns = tontine.totalTurns ?? members.length;
+  const totalTurns = members.length; // un tour correspond toujours à un membre
   const isLastTurn = currentTurn >= totalTurns;
 
   const handleAdvance = async () => {
     setAdvancing(true);
-    await advanceTurn(tontine);
+    await advanceTurn(tontine, totalTurns);
     setAdvancing(false);
     load();
   };
@@ -55,11 +55,13 @@ export default function CalendarView({ role }) {
         </button>
       )}
     >
-      <div style={{ display: "flex", gap: 20 }}>
-        <div style={{ background: T.ink, borderRadius: 16, padding: "28px 20px", flex: "0 0 380px" }}>
-          <RotationWheel members={members} currentTurn={currentTurn} amount={tontine.amount} currency={tontine.currency} />
+      <div className="two-col">
+        <div className="wheel-col" style={{ background: T.ink, borderRadius: 16, padding: "28px 20px" }}>
+          <div className="rotation-wheel-wrap">
+            <RotationWheel members={members} currentTurn={currentTurn} amount={tontine.amount} currency={tontine.currency} />
+          </div>
         </div>
-        <div style={{ flex: 1, background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "18px 20px" }}>
+        <div className="list-col" style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "18px 20px" }}>
           <h3 className="f-body" style={{ fontSize: 14, fontWeight: 700, margin: "0 0 14px" }}>Ordre des tours</h3>
           {members.map((m) => (
             <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${T.line}` }}>

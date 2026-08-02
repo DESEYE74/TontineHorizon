@@ -2,16 +2,15 @@ import React, { useEffect, useState } from "react";
 import { Share2, Download, FileText, ChevronRight } from "lucide-react";
 import { T } from "../theme.jsx";
 import { Screen } from "./UI.jsx";
-import { fetchReceipts } from "../data/api.js";
-import { TONTINE } from "../data/mock.js";
+import { fetchReceipts, fetchMembers, fetchTontineSettings } from "../data/api.js";
 import { downloadReceiptPdf, shareReceiptPdf } from "../lib/pdf.js";
 
-function ReceiptPreview({ receipt }) {
+function ReceiptPreview({ receipt, tontineName, totalTurns }) {
   return (
-    <div style={{ background: "#fff", border: `1px solid ${T.line}`, borderRadius: 14, padding: "26px 26px 22px", width: 340 }}>
+    <div style={{ background: "#fff", border: `1px solid ${T.line}`, borderRadius: 14, padding: "26px 26px 22px", width: "100%", maxWidth: 340 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
         <div>
-          <p className="f-display" style={{ fontSize: 17, fontStyle: "italic", margin: 0, color: T.text }}>{TONTINE.name}</p>
+          <p className="f-display" style={{ fontSize: 17, fontStyle: "italic", margin: 0, color: T.text }}>{tontineName}</p>
           <p style={{ fontSize: 11, color: T.textSoft, margin: "2px 0 0" }}>Reçu de versement</p>
         </div>
         <div style={{ width: 34, height: 34, borderRadius: "50%", background: T.goldTint, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -20,7 +19,7 @@ function ReceiptPreview({ receipt }) {
       </div>
       <div className="f-mono" style={{ fontSize: 11, color: T.textSoft, marginBottom: 16 }}>{receipt.id}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
-        {[["Membre", receipt.member], ["Tour", `Tour ${receipt.turn} / ${TONTINE.totalTurns}`], ["Date de versement", receipt.date]].map(([k, v]) => (
+        {[["Membre", receipt.member], ["Tour", `Tour ${receipt.turn} / ${totalTurns}`], ["Date de versement", receipt.date]].map(([k, v]) => (
           <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
             <span style={{ color: T.textSoft }}>{k}</span>
             <span style={{ fontWeight: 600, color: T.text }}>{v}</span>
@@ -40,13 +39,15 @@ export default function ReceiptsView({ role, me }) {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [context, setContext] = useState({ name: "Tontine", currency: "FCFA", totalTurns: 12 });
 
   useEffect(() => {
     (async () => {
-      const all = await fetchReceipts();
+      const [all, members, tontine] = await Promise.all([fetchReceipts(), fetchMembers(), fetchTontineSettings()]);
       const list = role === "admin" ? all : all.filter((r) => r.member === me?.name);
       setReceipts(list);
       setSelected(list[0] ?? null);
+      setContext({ name: tontine.name, currency: tontine.currency, totalTurns: members.length });
       setLoading(false);
     })();
   }, [role, me]);
@@ -60,8 +61,8 @@ export default function ReceiptsView({ role, me }) {
           Aucun reçu pour le moment.
         </div>
       ) : (
-        <div style={{ display: "flex", gap: 24 }}>
-          <div style={{ flex: 1, background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "14px 16px" }}>
+        <div className="two-col">
+          <div className="list-col" style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "14px 16px" }}>
             {receipts.map((r) => (
               <button key={r.id} onClick={() => setSelected(r)} style={{
                 width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -81,12 +82,12 @@ export default function ReceiptsView({ role, me }) {
           </div>
 
           {selected && (
-            <div style={{ flex: "0 0 auto" }}>
-              <ReceiptPreview receipt={selected} />
+            <div className="wheel-col" style={{ flex: "0 0 auto", background: "none", padding: 0 }}>
+              <ReceiptPreview receipt={selected} tontineName={context.name} totalTurns={context.totalTurns} />
               <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
                 <button
                   disabled={busy}
-                  onClick={async () => { setBusy(true); await shareReceiptPdf(selected); setBusy(false); }}
+                  onClick={async () => { setBusy(true); await shareReceiptPdf(selected, context); setBusy(false); }}
                   style={{
                     flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
                     background: "#25D366", border: "none", borderRadius: 10, padding: "11px 0",
@@ -97,7 +98,7 @@ export default function ReceiptsView({ role, me }) {
                 </button>
                 <button
                   disabled={busy}
-                  onClick={async () => { setBusy(true); await downloadReceiptPdf(selected); setBusy(false); }}
+                  onClick={async () => { setBusy(true); await downloadReceiptPdf(selected, context); setBusy(false); }}
                   style={{ width: 44, display: "flex", alignItems: "center", justifyContent: "center", background: T.ink, border: "none", borderRadius: 10, cursor: "pointer" }}
                 >
                   <Download size={16} color={T.gold} />
