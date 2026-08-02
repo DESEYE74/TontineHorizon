@@ -39,10 +39,50 @@ export function GlobalFonts() {
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
       * { box-sizing: border-box; }
-      body { margin: 0; }
+      html, body { margin: 0; max-width: 100%; overflow-x: hidden; }
       .f-display { font-family: 'Fraunces', serif; }
       .f-body { font-family: 'Inter', sans-serif; }
       .f-mono { font-family: 'IBM Plex Mono', monospace; }
+
+      /* ---- Mise en page responsive (mobile) ---- */
+      .app-shell { display: flex; min-height: 100vh; }
+      .app-sidebar {
+        width: 220px; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+      }
+      .app-nav-list { display: flex; flex-direction: column; gap: 2px; }
+      .app-main { flex: 1; min-width: 0; padding: 28px 32px; overflow-y: auto; }
+
+      .two-col { display: flex; gap: 20px; align-items: flex-start; }
+      .wheel-col { flex: 0 0 380px; max-width: 380px; }
+      .list-col { flex: 1; min-width: 0; }
+
+      .stat-row { display: flex; gap: 14px; margin-bottom: 24px; }
+
+      @media (max-width: 900px) {
+        .wheel-col { flex: 0 0 320px; max-width: 320px; }
+      }
+
+      @media (max-width: 760px) {
+        .app-shell { flex-direction: column; }
+        .app-sidebar {
+          width: 100%; height: auto; position: relative; padding: 12px 14px !important;
+        }
+        .app-sidebar-header { padding-bottom: 10px !important; }
+        .app-nav-list { flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+        .app-nav-list button { white-space: nowrap; flex-shrink: 0; }
+        .app-sidebar-footer { flex-direction: row !important; margin-top: 10px !important; gap: 8px !important; }
+        .app-sidebar-footer button { flex: 1; justify-content: center !important; }
+        .app-main { padding: 18px 16px; }
+
+        .two-col { flex-direction: column; }
+        .wheel-col { flex: 1 1 auto; max-width: 100%; width: 100%; }
+
+        .stat-row { flex-direction: column; }
+      }
+
+      @media (max-width: 480px) {
+        .rotation-wheel-wrap { transform: scale(0.82); transform-origin: top center; margin-bottom: -60px; }
+      }
     `}</style>
   );
 }
