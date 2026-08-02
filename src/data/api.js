@@ -1,11 +1,58 @@
 import { supabase, isDemoMode } from "../supabaseClient.js";
 import { TONTINE, MEMBERS, RECEIPTS } from "./mock.js";
 import { nextTurn } from "../lib/rotation.js";
+import { getCache, setCache, addToOutbox } from "../lib/offlineDb.js";
+import {
+  remoteFetchTontineSettings, remoteUpdateTontineSettings,
+  remoteFetchMembers, remoteFetchMembersAdmin, remoteAddMember, remoteUpdateMember, remoteDeleteMember,
+  remoteFetchReceipts, remoteFetchPaymentsForTurn, remoteRecordPayment,
+} from "./remote.js";
 
-// Toutes les fonctions ci-dessous utilisent Supabase si l'application est
-// configurée (voir .env.example), sinon elles retombent sur les données de
-// démonstration afin que l'application reste utilisable sans configuration.
+// ============================================================
+// Cette couche fait 3 choses à la fois, en mode réel (Supabase) :
+//  1. LECTURE : essaie le réseau, et si ça échoue, retombe sur la dernière
+//     copie connue (gardée dans IndexedDB) pour que l'appli reste utilisable
+//     hors connexion, même avec des données un peu anciennes.
+//  2. ÉCRITURE : si hors-ligne, l'action est mise en file d'attente
+//     (IndexedDB) et rejouée automatiquement au retour du réseau (voir
+//     lib/sync.js), avec une mise à jour "optimiste" du cache local pour que
+//     l'interface reflète immédiatement le changement.
+//  3. MODE DÉMO : aucune de ces logiques n'intervient, tout reste en mémoire.
+// ============================================================
 
+function isNetworkError(err) {
+  return !navigator.onLine || err?.message?.includes("fetch") || err?.name === "TypeError";
+}
+
+async function readWithCache(key, remoteFn) {
+  try {
+    const data = await remoteFn();
+    await setCache(key, data);
+    return data;
+  } catch (err) {
+    const cached = await getCache(key);
+    if (cached !== undefined) return cached;
+    throw err;
+  }
+}
+
+// action: { type, payload } — type doit correspondre à un handler dans lib/sync.js
+async function writeOrQueue({ type, payload, remoteFn, applyOptimistic }) {
+  const goOffline = async () => {
+    await addToOutbox({ type, payload });
+    if (applyOptimistic) await applyOptimistic();
+    return { pending: true };
+  };
+  if (!navigator.onLine) return goOffline();
+  try {
+    return await remoteFn();
+  } catch (err) {
+    if (isNetworkError(err)) return goOffline();
+    throw err;
+  }
+}
+
+// ---- Authentification ----------------------------------------------------
 export async function loginAdmin(email, password) {
   if (isDemoMode) {
     if (!email || !password) throw new Error("Identifiant et mot de passe requis.");
@@ -22,173 +69,166 @@ export async function loginMember(code) {
     if (!member) throw new Error("Code personnel invalide.");
     return member;
   }
-  // Le code n'est jamais lu directement en base côté client : on passe par
-  // une fonction Postgres (RPC) définie dans supabase/schema.sql, qui vérifie
-  // le code côté serveur et ne renvoie les données que si la correspondance existe.
   const { data, error } = await supabase.rpc("verify_member_code", { p_code: code });
   if (error || !data) throw new Error("Code personnel invalide.");
   return data;
 }
 
-// Réglages de la tontine — lecture publique (nom, montant, tour en cours...)
+// ---- Réglages de la tontine ------------------------------------------------
 export async function fetchTontineSettings() {
   if (isDemoMode) return TONTINE;
-  const { data, error } = await supabase.from("public_tontine_settings").select("*").single();
-  if (error) throw error;
-  return {
-    name: data.name,
-    motto: data.motto,
-    amount: data.amount,
-    currency: data.currency,
-    frequency: data.frequency,
-    currentTurn: data.current_turn,
-    totalTurns: data.total_turns,
-    cycleNumber: data.cycle_number ?? 1,
-  };
+  return readWithCache("tontine_settings", remoteFetchTontineSettings);
 }
 
-// Réglages de la tontine — écriture, réservée à l'administrateur connecté
 export async function updateTontineSettings(fields) {
   if (isDemoMode) {
     Object.assign(TONTINE, fields);
     return TONTINE;
   }
-  const dbFields = {};
-  if (fields.name !== undefined) dbFields.name = fields.name;
-  if (fields.motto !== undefined) dbFields.motto = fields.motto;
-  if (fields.amount !== undefined) dbFields.amount = fields.amount;
-  if (fields.currency !== undefined) dbFields.currency = fields.currency;
-  if (fields.frequency !== undefined) dbFields.frequency = fields.frequency;
-  if (fields.currentTurn !== undefined) dbFields.current_turn = fields.currentTurn;
-  if (fields.totalTurns !== undefined) dbFields.total_turns = fields.totalTurns;
-  if (fields.cycleNumber !== undefined) dbFields.cycle_number = fields.cycleNumber;
-
-  const { data, error } = await supabase
-    .from("tontine_settings")
-    .update(dbFields)
-    .eq("id", 1)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  return writeOrQueue({
+    type: "updateTontineSettings",
+    payload: fields,
+    remoteFn: async () => {
+      const data = await remoteUpdateTontineSettings(fields);
+      await setCache("tontine_settings", await remoteFetchTontineSettings());
+      return data;
+    },
+    applyOptimistic: async () => {
+      const current = (await getCache("tontine_settings")) || TONTINE;
+      const merged = { ...current, ...fields };
+      await setCache("tontine_settings", merged);
+    },
+  });
 }
 
-// Clôture le tour en cours et passe au suivant (reboucle au tour 1, avec un
-// cycle en plus, une fois le dernier tour atteint).
-export async function advanceTurn(tontine) {
-  const { currentTurn, cycleNumber } = nextTurn(tontine);
+export async function advanceTurn(tontine, totalTurns) {
+  const { currentTurn, cycleNumber } = nextTurn({ ...tontine, totalTurns });
   return updateTontineSettings({ currentTurn, cycleNumber });
 }
 
-// Membres — lecture publique (roue de rotation, calendrier), sans données sensibles
+// ---- Membres ----------------------------------------------------------------
 export async function fetchMembers() {
   if (isDemoMode) return MEMBERS;
-  const { data, error } = await supabase.from("public_members").select("*").order("turn");
-  if (error) throw error;
-  return data;
+  return readWithCache("members", remoteFetchMembers);
 }
 
-// Membres — lecture complète (code personnel, téléphone), réservée à l'administrateur connecté
 export async function fetchMembersAdmin() {
   if (isDemoMode) return MEMBERS.map((m) => ({ ...m, personal_code: m.code, turn_order: m.turn }));
-  const { data, error } = await supabase.from("members").select("*").order("turn_order");
-  if (error) throw error;
-  return data;
+  return readWithCache("members_admin", remoteFetchMembersAdmin);
 }
 
-// Membres — ajout, réservé à l'administrateur connecté
 export function generatePersonalCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-export async function addMember({ name, initials, phone, personalCode, turnOrder }) {
+export async function addMember(payload) {
   if (isDemoMode) {
-    const newMember = { id: Date.now(), name, initials, code: personalCode, turn: turnOrder, status: "upcoming" };
+    const newMember = { id: Date.now(), name: payload.name, initials: payload.initials, code: payload.personalCode, turn: payload.turnOrder, status: "upcoming" };
     MEMBERS.push(newMember);
     return newMember;
   }
-  const { data, error } = await supabase
-    .from("members")
-    .insert({
-      name,
-      initials,
-      phone: phone || null,
-      personal_code: personalCode,
-      turn_order: turnOrder,
-      status: "upcoming",
-    })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  return writeOrQueue({
+    type: "addMember",
+    payload,
+    remoteFn: () => remoteAddMember(payload),
+    applyOptimistic: async () => {
+      const list = (await getCache("members_admin")) || [];
+      const tempId = `pending-${Date.now()}`;
+      const optimisticMember = {
+        id: tempId, name: payload.name, initials: payload.initials, phone: payload.phone || null,
+        personal_code: payload.personalCode, turn_order: payload.turnOrder, status: "upcoming", _pending: true,
+      };
+      await setCache("members_admin", [...list, optimisticMember]);
+      const publicList = (await getCache("members")) || [];
+      await setCache("members", [...publicList, { id: tempId, name: payload.name, initials: payload.initials, turn: payload.turnOrder, status: "upcoming", _pending: true }]);
+    },
+  });
 }
 
-// Membres — modification, réservée à l'administrateur connecté
 export async function updateMember(id, fields) {
   if (isDemoMode) {
     const m = MEMBERS.find((x) => x.id === id);
     if (m) Object.assign(m, fields);
     return m;
   }
-  const dbFields = {};
-  if (fields.name !== undefined) dbFields.name = fields.name;
-  if (fields.initials !== undefined) dbFields.initials = fields.initials;
-  if (fields.phone !== undefined) dbFields.phone = fields.phone || null;
-  if (fields.turnOrder !== undefined) dbFields.turn_order = fields.turnOrder;
-  if (fields.personalCode !== undefined) dbFields.personal_code = fields.personalCode;
-
-  const { data, error } = await supabase.from("members").update(dbFields).eq("id", id).select().single();
-  if (error) throw error;
-  return data;
+  return writeOrQueue({
+    type: "updateMember",
+    payload: { id, fields },
+    remoteFn: () => remoteUpdateMember(id, fields),
+    applyOptimistic: async () => {
+      const list = (await getCache("members_admin")) || [];
+      await setCache("members_admin", list.map((m) => (m.id === id ? { ...m, ...toAdminShape(fields), _pending: true } : m)));
+      const publicList = (await getCache("members")) || [];
+      await setCache("members", publicList.map((m) => (m.id === id ? { ...m, ...toPublicShape(fields), _pending: true } : m)));
+    },
+  });
 }
 
-// Membres — suppression, réservée à l'administrateur connecté
+function toAdminShape(fields) {
+  const out = {};
+  if (fields.name !== undefined) out.name = fields.name;
+  if (fields.initials !== undefined) out.initials = fields.initials;
+  if (fields.phone !== undefined) out.phone = fields.phone;
+  if (fields.turnOrder !== undefined) out.turn_order = fields.turnOrder;
+  return out;
+}
+function toPublicShape(fields) {
+  const out = {};
+  if (fields.name !== undefined) out.name = fields.name;
+  if (fields.initials !== undefined) out.initials = fields.initials;
+  if (fields.turnOrder !== undefined) out.turn = fields.turnOrder;
+  return out;
+}
+
 export async function deleteMember(id) {
   if (isDemoMode) {
     const i = MEMBERS.findIndex((x) => x.id === id);
     if (i >= 0) MEMBERS.splice(i, 1);
     return true;
   }
-  const { error } = await supabase.from("members").delete().eq("id", id);
-  if (error) throw error;
-  return true;
+  return writeOrQueue({
+    type: "deleteMember",
+    payload: { id },
+    remoteFn: () => remoteDeleteMember(id),
+    applyOptimistic: async () => {
+      const list = (await getCache("members_admin")) || [];
+      await setCache("members_admin", list.filter((m) => m.id !== id));
+      const publicList = (await getCache("members")) || [];
+      await setCache("members", publicList.filter((m) => m.id !== id));
+    },
+  });
 }
 
+// ---- Reçus / versements -------------------------------------------------------
 export async function fetchReceipts() {
   if (isDemoMode) return RECEIPTS;
-  const { data, error } = await supabase
-    .from("payments")
-    .select("id, turn, paid_at, amount, members(name)")
-    .order("paid_at", { ascending: false });
-  if (error) throw error;
-  return data.map((p) => ({
-    id: p.id,
-    member: p.members?.name ?? "—",
-    turn: p.turn,
-    date: new Date(p.paid_at).toLocaleDateString("fr-FR"),
-    amount: p.amount,
-  }));
+  return readWithCache("receipts", remoteFetchReceipts);
 }
 
-// Versements enregistrés pour un tour donné — sert à calculer qui a payé.
 export async function fetchPaymentsForTurn(turn) {
   if (isDemoMode) {
     return MEMBERS.filter((m) => m.status === "paid" || m.status === "current").map((m) => ({ member_id: m.id, turn, amount: TONTINE.amount }));
   }
-  const { data, error } = await supabase.from("payments").select("member_id, turn, amount").eq("turn", turn);
-  if (error) throw error;
-  return data;
+  return readWithCache(`payments_turn_${turn}`, () => remoteFetchPaymentsForTurn(turn));
 }
 
-export async function recordPayment({ memberId, turn, amount }) {
+export async function recordPayment({ memberId, turn, amount, memberName }) {
   if (isDemoMode) {
     return { id: `demo-${Date.now()}`, memberId, turn, amount, paid_at: new Date().toISOString() };
   }
-  const { data, error } = await supabase
-    .from("payments")
-    .insert({ member_id: memberId, turn, amount })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  return writeOrQueue({
+    type: "recordPayment",
+    payload: { memberId, turn, amount },
+    remoteFn: () => remoteRecordPayment({ memberId, turn, amount }),
+    applyOptimistic: async () => {
+      const key = `payments_turn_${turn}`;
+      const cached = (await getCache(key)) || [];
+      await setCache(key, [...cached, { member_id: memberId, turn, amount, _pending: true }]);
+      const receipts = (await getCache("receipts")) || [];
+      await setCache("receipts", [
+        { id: `pending-${Date.now()}`, member: memberName || "—", turn, date: new Date().toLocaleDateString("fr-FR"), amount, _pending: true },
+        ...receipts,
+      ]);
+    },
+  });
 }
