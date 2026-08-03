@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["src/assets/logo.png"],
+      includeAssets: ["logo.png"],
       manifest: {
         name: "Tontine",
         short_name: "Tontine",
@@ -17,8 +17,8 @@ export default defineConfig({
         background_color: "#161C33",
         theme_color: "#161C33",
         icons: [
-          { src: "/src/assets/logo.png", sizes: "192x192", type: "image/png" },
-          { src: "/src/assets/logo.png", sizes: "512x512", type: "image/png" },
+          { src: "/logo.png", sizes: "192x192", type: "image/png" },
+          { src: "/logo.png", sizes: "512x512", type: "image/png" },
         ],
       },
       workbox: {
