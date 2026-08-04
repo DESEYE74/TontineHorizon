@@ -58,6 +58,18 @@ export function GlobalFonts() {
 
       .stat-row { display: flex; gap: 14px; margin-bottom: 24px; }
 
+      /* ---- Listes défilantes (hauteur limitée + barre de défilement) ---- */
+      .scroll-list { max-height: 420px; overflow-y: auto; padding-right: 4px; }
+      .scroll-list::-webkit-scrollbar { width: 8px; }
+      .scroll-list::-webkit-scrollbar-track { background: transparent; }
+      .scroll-list::-webkit-scrollbar-thumb { background: #D8D4C6; border-radius: 8px; }
+      .scroll-list::-webkit-scrollbar-thumb:hover { background: #C4BFAE; }
+      .scroll-list { scrollbar-width: thin; scrollbar-color: #D8D4C6 transparent; }
+
+      @media (max-width: 760px) {
+        .scroll-list { max-height: 340px; }
+      }
+
       @media (max-width: 900px) {
         .wheel-col { flex: 0 0 320px; max-width: 320px; }
       }
