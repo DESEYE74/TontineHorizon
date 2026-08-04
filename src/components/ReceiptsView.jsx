@@ -63,7 +63,8 @@ export default function ReceiptsView({ role, me }) {
       ) : (
         <div className="two-col">
           <div className="list-col" style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "14px 16px" }}>
-            {receipts.map((r) => (
+            <div className="scroll-list">
+              {receipts.map((r) => (
               <button key={r.id} onClick={() => setSelected(r)} style={{
                 width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "12px 8px", borderRadius: 10, border: "none", cursor: "pointer", textAlign: "left",
@@ -79,6 +80,7 @@ export default function ReceiptsView({ role, me }) {
                 <ChevronRight size={15} color={T.textSoft} />
               </button>
             ))}
+            </div>
           </div>
 
           {selected && (

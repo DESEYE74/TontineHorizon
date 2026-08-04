@@ -153,7 +153,7 @@ export default function MembersView() {
       {loading ? (
         <p style={{ color: T.textSoft, fontSize: 13.5 }}>Chargement…</p>
       ) : (
-        <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "8px 20px" }}>
+        <div className="scroll-list" style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "8px 20px" }}>
           {members.map((m) => (
             <div key={m.id} style={{ padding: "14px 0", borderBottom: `1px solid ${T.line}` }}>
               {editingId === m.id ? (

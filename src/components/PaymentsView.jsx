@@ -140,16 +140,18 @@ export default function PaymentsView() {
       {/* État des cotisations pour ce tour */}
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "8px 20px", marginBottom: 24 }}>
         <h3 className="f-body" style={{ fontSize: 14, fontWeight: 700, margin: "14px 0" }}>État des cotisations — tour {currentTurn}</h3>
-        {members.map((m) => (
-          <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${T.line}` }}>
-            <span style={{ fontSize: 13.5 }}>{m.name}</span>
-            <Pill status={paymentStatus(m.id, currentTurn, payments)} variant="payment" />
-          </div>
-        ))}
+        <div className="scroll-list">
+          {members.map((m) => (
+            <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${T.line}` }}>
+              <span style={{ fontSize: 13.5 }}>{m.name}</span>
+              <Pill status={paymentStatus(m.id, currentTurn, payments)} variant="payment" />
+            </div>
+          ))}
+        </div>
       </div>
 
       <h3 className="f-body" style={{ fontSize: 14, fontWeight: 700, margin: "0 0 14px" }}>Historique des versements</h3>
-      <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "8px 20px" }}>
+      <div className="scroll-list" style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "8px 20px" }}>
         {receipts.length === 0 ? (
           <p style={{ color: T.textSoft, fontSize: 13.5, padding: "16px 0" }}>Aucun versement enregistré pour le moment.</p>
         ) : receipts.map((r) => (
