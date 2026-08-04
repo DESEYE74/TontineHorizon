@@ -60,7 +60,7 @@ export default function AdminDashboard() {
           <p style={{ fontSize: 12, color: T.textSoft, margin: "0 0 14px" }}>
             Qui a déjà reçu la caisse, qui la reçoit ce tour-ci, qui attend encore son tour.
           </p>
-          <div style={{ display: "flex", flexDirection: "column" }}>
+          <div className="scroll-list" style={{ display: "flex", flexDirection: "column" }}>
             {members.map((m) => (
               <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${T.line}` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
