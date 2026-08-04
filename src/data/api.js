@@ -2,6 +2,7 @@ import { supabase, isDemoMode } from "../supabaseClient.js";
 import { TONTINE, MEMBERS, RECEIPTS } from "./mock.js";
 import { nextTurn } from "../lib/rotation.js";
 import { getCache, setCache, addToOutbox } from "../lib/offlineDb.js";
+import { cacheAdminLogin, verifyAdminOffline, cacheMemberLogin, verifyMemberOffline } from "../lib/authCache.js";
 import {
   remoteFetchTontineSettings, remoteUpdateTontineSettings,
   remoteFetchMembers, remoteFetchMembersAdmin, remoteAddMember, remoteUpdateMember, remoteDeleteMember,
@@ -58,9 +59,23 @@ export async function loginAdmin(email, password) {
     if (!email || !password) throw new Error("Identifiant et mot de passe requis.");
     return { email };
   }
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  return data.user;
+  if (!navigator.onLine) {
+    const cached = await verifyAdminOffline(email, password);
+    if (cached) return cached;
+    throw new Error("Hors connexion : identifiants non reconnus sur cet appareil. Une première connexion en ligne est nécessaire.");
+  }
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    await cacheAdminLogin(email, password, data.user);
+    return data.user;
+  } catch (err) {
+    if (isNetworkError(err)) {
+      const cached = await verifyAdminOffline(email, password);
+      if (cached) return cached;
+    }
+    throw err;
+  }
 }
 
 export async function loginMember(code) {
@@ -69,9 +84,23 @@ export async function loginMember(code) {
     if (!member) throw new Error("Code personnel invalide.");
     return member;
   }
-  const { data, error } = await supabase.rpc("verify_member_code", { p_code: code });
-  if (error || !data) throw new Error("Code personnel invalide.");
-  return data;
+  if (!navigator.onLine) {
+    const cached = verifyMemberOffline(code);
+    if (cached) return cached;
+    throw new Error("Hors connexion : ce code n'a pas encore été utilisé sur cet appareil. Une première connexion en ligne est nécessaire.");
+  }
+  try {
+    const { data, error } = await supabase.rpc("verify_member_code", { p_code: code });
+    if (error || !data) throw new Error("Code personnel invalide.");
+    cacheMemberLogin(code, data);
+    return data;
+  } catch (err) {
+    if (isNetworkError(err)) {
+      const cached = verifyMemberOffline(code);
+      if (cached) return cached;
+    }
+    throw err;
+  }
 }
 
 // ---- Réglages de la tontine ------------------------------------------------
