@@ -64,7 +64,7 @@ export default function App() {
           <Shell role={role} active={nav} onNav={setNav} onLogout={logout} onChat={() => setChatOpen(true)}>
             {renderScreen()}
           </Shell>
-          <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} role={role} />
+          <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} role={role} me={me} />
         </>
       )}
       <OfflineBadge />
