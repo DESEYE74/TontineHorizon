@@ -155,7 +155,7 @@ export default function MembersView() {
       ) : (
         <div className="scroll-list" style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "8px 20px" }}>
           {members.map((m) => (
-            <div key={m.id} style={{ padding: "14px 0", borderBottom: `1px solid ${T.line}` }}>
+            <div key={m.id} style={{ padding: "9px 0", borderBottom: `1px solid ${T.line}` }}>
               {editingId === m.id ? (
                 <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
                   <div style={{ flex: 2, minWidth: 160 }}>

@@ -65,7 +65,7 @@ export default function CalendarView({ role }) {
           <h3 className="f-body" style={{ fontSize: 14, fontWeight: 700, margin: "0 0 14px" }}>Ordre des tours</h3>
           <div className="scroll-list">
             {members.map((m) => (
-              <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${T.line}` }}>
+              <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${T.line}` }}>
                 <span style={{ fontSize: 13.5 }}>Tour {m.turn} — {m.name}</span>
                 <Pill status={rotationStatus(m.turn, currentTurn)} />
               </div>

@@ -142,7 +142,7 @@ export default function PaymentsView() {
         <h3 className="f-body" style={{ fontSize: 14, fontWeight: 700, margin: "14px 0" }}>État des cotisations — tour {currentTurn}</h3>
         <div className="scroll-list">
           {members.map((m) => (
-            <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${T.line}` }}>
+            <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${T.line}` }}>
               <span style={{ fontSize: 13.5 }}>{m.name}</span>
               <Pill status={paymentStatus(m.id, currentTurn, payments)} variant="payment" />
             </div>
@@ -155,7 +155,7 @@ export default function PaymentsView() {
         {receipts.length === 0 ? (
           <p style={{ color: T.textSoft, fontSize: 13.5, padding: "16px 0" }}>Aucun versement enregistré pour le moment.</p>
         ) : receipts.map((r) => (
-          <div key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: `1px solid ${T.line}` }}>
+          <div key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0", borderBottom: `1px solid ${T.line}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <FileText size={15} color={T.textSoft} />
               <div>
