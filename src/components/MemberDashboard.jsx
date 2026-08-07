@@ -57,15 +57,17 @@ export default function MemberDashboard({ me }) {
           </div>
         </div>
         <div className="list-col" style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 16, padding: "18px 20px" }}>
-          <h3 className="f-body" style={{ fontSize: 14, fontWeight: 700, margin: "0 0 14px" }}>Ordre des tours du groupe</h3>
-          {members.map((m) => (
-            <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${T.line}` }}>
-              <span style={{ fontSize: 13.5, fontWeight: m.id === self?.id ? 700 : 400 }}>
-                Tour {m.turn} — {m.name}{m.id === self?.id ? " (vous)" : ""}
-              </span>
-              <Pill status={rotationStatus(m.turn, currentTurn)} />
-            </div>
-          ))}
+          <h3 className="f-body" style={{ fontSize: 14, fontWeight: 700, margin: "0 0 10px" }}>Ordre des tours du groupe</h3>
+          <div className="scroll-list">
+            {members.map((m) => (
+              <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${T.line}` }}>
+                <span style={{ fontSize: 13.5, fontWeight: m.id === self?.id ? 700 : 400 }}>
+                  Tour {m.turn} — {m.name}{m.id === self?.id ? " (vous)" : ""}
+                </span>
+                <Pill status={rotationStatus(m.turn, currentTurn)} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </Screen>
