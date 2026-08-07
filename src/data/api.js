@@ -229,9 +229,17 @@ export async function deleteMember(id) {
 }
 
 // ---- Reçus / versements -------------------------------------------------------
+function withReference(receipt) {
+  const code = receipt.memberCode || "------";
+  return { ...receipt, reference: `${code}T${receipt.turn}C${receipt.cycle ?? 1}` };
+}
+
 export async function fetchReceipts() {
-  if (isDemoMode) return RECEIPTS;
-  return readWithCache("receipts", remoteFetchReceipts);
+  if (isDemoMode) {
+    return RECEIPTS.map((r) => withReference({ ...r, memberCode: r.memberCode || "947162", cycle: r.cycle || TONTINE.cycleNumber || 1 }));
+  }
+  const data = await readWithCache("receipts", remoteFetchReceipts);
+  return data.map(withReference);
 }
 
 export async function fetchPaymentsForTurn(turn) {
@@ -241,21 +249,21 @@ export async function fetchPaymentsForTurn(turn) {
   return readWithCache(`payments_turn_${turn}`, () => remoteFetchPaymentsForTurn(turn));
 }
 
-export async function recordPayment({ memberId, turn, amount, memberName }) {
+export async function recordPayment({ memberId, turn, cycle, amount, memberName, memberCode }) {
   if (isDemoMode) {
-    return { id: `demo-${Date.now()}`, memberId, turn, amount, paid_at: new Date().toISOString() };
+    return { id: `demo-${Date.now()}`, memberId, turn, cycle, amount, paid_at: new Date().toISOString() };
   }
   return writeOrQueue({
     type: "recordPayment",
-    payload: { memberId, turn, amount },
-    remoteFn: () => remoteRecordPayment({ memberId, turn, amount }),
+    payload: { memberId, turn, cycle, amount },
+    remoteFn: () => remoteRecordPayment({ memberId, turn, cycle, amount }),
     applyOptimistic: async () => {
       const key = `payments_turn_${turn}`;
       const cached = (await getCache(key)) || [];
       await setCache(key, [...cached, { member_id: memberId, turn, amount, _pending: true }]);
       const receipts = (await getCache("receipts")) || [];
       await setCache("receipts", [
-        { id: `pending-${Date.now()}`, member: memberName || "—", turn, date: new Date().toLocaleDateString("fr-FR"), amount, _pending: true },
+        { id: `pending-${Date.now()}`, member: memberName || "—", memberCode: memberCode || "", turn, cycle, date: new Date().toLocaleDateString("fr-FR"), amount, _pending: true },
         ...receipts,
       ]);
     },

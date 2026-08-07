@@ -79,13 +79,15 @@ export async function remoteDeleteMember(id) {
 export async function remoteFetchReceipts() {
   const { data, error } = await supabase
     .from("payments")
-    .select("id, turn, paid_at, amount, members(name)")
+    .select("id, turn, cycle, paid_at, amount, members(name, personal_code)")
     .order("paid_at", { ascending: false });
   if (error) throw error;
   return data.map((p) => ({
     id: p.id,
     member: p.members?.name ?? "—",
+    memberCode: p.members?.personal_code ?? "",
     turn: p.turn,
+    cycle: p.cycle ?? 1,
     date: new Date(p.paid_at).toLocaleDateString("fr-FR"),
     amount: p.amount,
   }));
@@ -97,8 +99,8 @@ export async function remoteFetchPaymentsForTurn(turn) {
   return data;
 }
 
-export async function remoteRecordPayment({ memberId, turn, amount }) {
-  const { data, error } = await supabase.from("payments").insert({ member_id: memberId, turn, amount }).select().single();
+export async function remoteRecordPayment({ memberId, turn, cycle, amount }) {
+  const { data, error } = await supabase.from("payments").insert({ member_id: memberId, turn, cycle: cycle ?? 1, amount }).select().single();
   if (error) throw error;
   return data;
 }
