@@ -37,6 +37,7 @@ create table if not exists payments (
   id uuid primary key default gen_random_uuid(),
   member_id uuid not null references members(id) on delete cascade,
   turn int not null,
+  cycle int not null default 1,
   amount numeric not null,
   paid_at timestamptz not null default now()
 );
