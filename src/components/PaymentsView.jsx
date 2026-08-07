@@ -64,7 +64,7 @@ export default function PaymentsView() {
     setError("");
     try {
       const member = members.find((m) => String(m.id) === String(selectedMember));
-      await recordPayment({ memberId: member.id, turn: currentTurn, amount: Number(amount), memberName: member.name });
+      await recordPayment({ memberId: member.id, turn: currentTurn, cycle: tontine.cycleNumber ?? 1, amount: Number(amount), memberName: member.name, memberCode: member.code });
       setSelectedMember("");
       setAmount(String(tontine.amount));
       load();
