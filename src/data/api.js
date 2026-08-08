@@ -5,7 +5,7 @@ import { getCache, setCache, addToOutbox } from "../lib/offlineDb.js";
 import { cacheAdminLogin, verifyAdminOffline, cacheMemberLogin, verifyMemberOffline } from "../lib/authCache.js";
 import {
   remoteFetchTontineSettings, remoteUpdateTontineSettings,
-  remoteFetchMembers, remoteFetchMembersAdmin, remoteAddMember, remoteUpdateMember, remoteDeleteMember,
+  remoteFetchMembers, remoteFetchMembersAdmin, remoteAddMember, remoteUpdateMember, remoteDeleteMember, remoteAssignPriorityTurn,
   remoteFetchReceipts, remoteFetchPaymentsForTurn, remoteRecordPayment,
 } from "./remote.js";
 
@@ -226,6 +226,32 @@ export async function deleteMember(id) {
       await setCache("members", publicList.filter((m) => m.id !== id));
     },
   });
+}
+
+// Donner la priorité à un membre (cas d'urgence) : réordonne plusieurs
+// membres à la fois, ce qui est trop complexe pour être mis en file d'attente
+// hors-ligne de façon fiable — cette action nécessite donc une connexion.
+export async function assignPriorityTurn(memberId) {
+  if (isDemoMode) {
+    const target = MEMBERS.find((m) => m.id === memberId);
+    const tontine = TONTINE;
+    if (!target) throw new Error("Membre introuvable.");
+    if (target.turn === tontine.currentTurn) return true;
+    if (target.turn < tontine.currentTurn) throw new Error("Ce membre a déjà reçu la caisse pour ce cycle.");
+    MEMBERS.forEach((m) => {
+      if (m.turn >= tontine.currentTurn && m.turn < target.turn) m.turn += 1;
+    });
+    target.turn = tontine.currentTurn;
+    return true;
+  }
+  if (!navigator.onLine) {
+    throw new Error("Cette action nécessite une connexion internet (elle modifie plusieurs membres à la fois).");
+  }
+  const tontine = await remoteFetchTontineSettings();
+  await remoteAssignPriorityTurn(memberId, tontine.currentTurn ?? 1);
+  await setCache("members", await remoteFetchMembers());
+  await setCache("members_admin", await remoteFetchMembersAdmin());
+  return true;
 }
 
 // ---- Reçus / versements -------------------------------------------------------

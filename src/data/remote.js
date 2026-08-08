@@ -76,6 +76,36 @@ export async function remoteDeleteMember(id) {
   return true;
 }
 
+// Fait passer un membre en tête de file (bénéficiaire du tour en cours),
+// en décalant d'un cran tous les membres qui étaient entre-temps devant lui.
+// Utilisé pour les cas d'urgence : on ne change pas l'ordre relatif des
+// autres membres, on insère juste ce membre en priorité.
+export async function remoteAssignPriorityTurn(memberId, currentTurn) {
+  const { data: members, error } = await supabase.from("members").select("id, turn_order").order("turn_order");
+  if (error) throw error;
+
+  const target = members.find((m) => m.id === memberId);
+  if (!target) throw new Error("Membre introuvable.");
+  if (target.turn_order === currentTurn) return; // déjà en tête, rien à faire
+  if (target.turn_order < currentTurn) {
+    throw new Error("Ce membre a déjà reçu la caisse pour ce cycle — impossible de le repasser en priorité.");
+  }
+
+  // Décale d'un cran tous les membres actuellement entre currentTurn et le
+  // membre ciblé, du plus loin au plus proche pour ne jamais créer de doublon.
+  const toShift = members
+    .filter((m) => m.turn_order >= currentTurn && m.turn_order < target.turn_order)
+    .sort((a, b) => b.turn_order - a.turn_order);
+
+  for (const m of toShift) {
+    const { error: shiftError } = await supabase.from("members").update({ turn_order: m.turn_order + 1 }).eq("id", m.id);
+    if (shiftError) throw shiftError;
+  }
+
+  const { error: targetError } = await supabase.from("members").update({ turn_order: currentTurn }).eq("id", memberId);
+  if (targetError) throw targetError;
+}
+
 export async function remoteFetchReceipts() {
   const { data, error } = await supabase
     .from("payments")
