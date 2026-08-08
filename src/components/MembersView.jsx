@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { UserPlus, RefreshCw, Phone, Pencil, Trash2, X, Check } from "lucide-react";
+import { UserPlus, RefreshCw, Phone, Pencil, Trash2, X, Check, Zap } from "lucide-react";
 import { T } from "../theme.jsx";
 import { Screen, Pill } from "./UI.jsx";
-import { fetchMembersAdmin, fetchTontineSettings, addMember, updateMember, deleteMember, generatePersonalCode } from "../data/api.js";
+import { fetchMembersAdmin, fetchTontineSettings, addMember, updateMember, deleteMember, assignPriorityTurn, generatePersonalCode } from "../data/api.js";
 import { rotationStatus } from "../lib/rotation.js";
 
 const inputStyle = {
@@ -24,6 +24,9 @@ export default function MembersView() {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ name: "", phone: "", turn_order: 1 });
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [confirmPriorityId, setConfirmPriorityId] = useState(null);
+  const [priorityBusy, setPriorityBusy] = useState(false);
+  const [priorityError, setPriorityError] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -98,6 +101,20 @@ export default function MembersView() {
       setError(e.message || "Erreur lors de la suppression.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const confirmPriority = async (id) => {
+    setPriorityBusy(true);
+    setPriorityError("");
+    try {
+      await assignPriorityTurn(id);
+      setConfirmPriorityId(null);
+      load();
+    } catch (e) {
+      setPriorityError(e.message || "Erreur lors de l'attribution de priorité.");
+    } finally {
+      setPriorityBusy(false);
     }
   };
 
@@ -199,6 +216,13 @@ export default function MembersView() {
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                     <span className="f-mono" style={{ fontSize: 12.5, color: T.textSoft, whiteSpace: "nowrap" }}>Code : {m.personal_code}</span>
                     <Pill status={rotationStatus(m.turn_order, currentTurn)} />
+                    {rotationStatus(m.turn_order, currentTurn) === "upcoming" && confirmPriorityId !== m.id && (
+                      <button onClick={() => { setConfirmPriorityId(m.id); setPriorityError(""); }} title="Donner la priorité (cas d'urgence)" style={{
+                        background: "none", border: "none", cursor: "pointer", padding: 4, color: T.gold,
+                      }}>
+                        <Zap size={15} />
+                      </button>
+                    )}
                     <button onClick={() => startEdit(m)} title="Modifier" style={{
                       background: "none", border: "none", cursor: "pointer", padding: 4, color: T.textSoft,
                     }}>
@@ -223,6 +247,29 @@ export default function MembersView() {
                     )}
                   </div>
                 </div>
+              )}
+              {confirmPriorityId === m.id && (
+                <div style={{
+                  marginTop: 8, background: "#F7EFD8", border: `1px solid ${T.gold}`, borderRadius: 9,
+                  padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8,
+                }}>
+                  <span style={{ fontSize: 12.5, color: "#5A4300" }}>
+                    <strong>{m.name}</strong> deviendra bénéficiaire de ce tour-ci. Les autres membres concernés seront décalés d'un cran.
+                  </span>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => confirmPriority(m.id)} disabled={priorityBusy} style={{
+                      background: T.gold, border: "none", borderRadius: 7, padding: "5px 10px", color: "#2A2205", fontWeight: 700, fontSize: 11.5, cursor: "pointer",
+                    }}>
+                      {priorityBusy ? "…" : "Confirmer la priorité"}
+                    </button>
+                    <button onClick={() => setConfirmPriorityId(null)} style={{
+                      background: "#fff", border: `1px solid ${T.line}`, borderRadius: 7, padding: "5px 10px", fontSize: 11.5, cursor: "pointer",
+                    }}>Annuler</button>
+                  </div>
+                </div>
+              )}
+              {confirmPriorityId === m.id && priorityError && (
+                <p style={{ color: T.rust, fontSize: 11.5, marginTop: 6 }}>{priorityError}</p>
               )}
             </div>
           ))}
