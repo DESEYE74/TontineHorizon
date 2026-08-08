@@ -1,3 +1,7 @@
+// Marque de l'éditeur de l'application — fixe, indépendante du nom de la
+// tontine (qui lui est modifiable par l'administrateur dans Supabase).
+export const BRAND_NAME = "Deseye Groupe";
+
 export const T = {
   ink: "#161C33",
   inkPanel: "#212B4C",
