@@ -1,6 +1,5 @@
-// Ce fichier ne contient QUE des appels directs à Supabase, sans logique
-// hors-ligne. Il est utilisé par data/api.js (couche publique, avec cache et
-// file d'attente) et par lib/sync.js (pour rejouer les actions en attente).
+// Ce fichier ne contient QUE des appels directs à Supabase, utilisés par
+// data/api.js.
 
 import { supabase } from "../supabaseClient.js";
 
