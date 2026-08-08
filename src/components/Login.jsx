@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Wallet, KeyRound } from "lucide-react";
-import { T } from "../theme.jsx";
+import { T, BRAND_NAME } from "../theme.jsx";
 import { TONTINE } from "../data/mock.js";
 import { loginAdmin, loginMember, fetchTontineSettings } from "../data/api.js";
 import logoUrl from "../assets/logo.png";
@@ -51,6 +51,7 @@ export default function Login({ onEnter }) {
             {brand.name}
           </h1>
           <p style={{ color: "#8B93B8", fontSize: 13, margin: "6px 0 0" }}>{brand.motto}</p>
+          <p style={{ color: "#5A6390", fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", margin: "10px 0 0" }}>{BRAND_NAME}</p>
         </div>
 
         <div style={{ display: "flex", background: "#212B4C", borderRadius: 12, padding: 4, marginBottom: 20 }}>

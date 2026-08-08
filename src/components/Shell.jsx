@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Wallet, Users, CalendarDays, Receipt, LogOut, Sparkles, CreditCard, Menu, X } from "lucide-react";
-import { T } from "../theme.jsx";
+import { T, BRAND_NAME } from "../theme.jsx";
 import { TONTINE } from "../data/mock.js";
 import { fetchTontineSettings } from "../data/api.js";
 import logoUrl from "../assets/logo.png";
@@ -117,6 +117,9 @@ export default function Shell({ role, active, onNav, onLogout, onChat, children 
               }}>
                 <LogOut size={15} /> Se déconnecter
               </button>
+              <p style={{ color: "#4A527A", fontSize: 9.5, letterSpacing: 1.2, textTransform: "uppercase", textAlign: "center", margin: "6px 0 0" }}>
+                {BRAND_NAME}
+              </p>
             </div>
           </>
         )}
