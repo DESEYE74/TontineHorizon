@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { GlobalFonts } from "./theme.jsx";
 import Login from "./components/Login.jsx";
 import Shell from "./components/Shell.jsx";
@@ -9,8 +9,6 @@ import MembersView from "./components/MembersView.jsx";
 import CalendarView from "./components/CalendarView.jsx";
 import ReceiptsView from "./components/ReceiptsView.jsx";
 import ChatDrawer from "./components/ChatDrawer.jsx";
-import OfflineBadge from "./components/OfflineBadge.jsx";
-import { watchConnectivity } from "./lib/sync.js";
 
 export default function App() {
   const [screen, setScreen] = useState("login"); // login | app
@@ -18,18 +16,6 @@ export default function App() {
   const [me, setMe] = useState(null);
   const [nav, setNav] = useState("dashboard");
   const [chatOpen, setChatOpen] = useState(false);
-
-  // Par sécurité, la connexion est toujours redemandée à l'ouverture de
-  // l'application (pas de session persistante d'un appareil à l'autre).
-  // Une fois connecté, si le réseau vient à manquer en cours d'utilisation,
-  // l'application continue de fonctionner (voir OfflineBadge) et synchronise
-  // automatiquement dès que la connexion revient.
-  useEffect(() => {
-    const stop = watchConnectivity((count) => {
-      window.dispatchEvent(new CustomEvent("tontine-synced", { detail: { count } }));
-    });
-    return stop;
-  }, []);
 
   const enter = (mode, user) => {
     setRole(mode);
@@ -67,7 +53,6 @@ export default function App() {
           <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} role={role} me={me} />
         </>
       )}
-      <OfflineBadge />
     </>
   );
 }
